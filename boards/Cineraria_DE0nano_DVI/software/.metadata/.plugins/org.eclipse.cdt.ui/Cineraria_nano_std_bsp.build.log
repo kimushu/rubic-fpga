@@ -1,0 +1,8 @@
+
+**** Clean-only build of configuration Nios II for project Cineraria_nano_std_bsp ****
+
+make clean 
+/bin/sh: line 0: igncr: invalid option name
+[BSP clean complete]
+
+**** Build Finished ****

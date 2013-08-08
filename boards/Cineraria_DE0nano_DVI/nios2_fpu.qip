@@ -1,0 +1,72 @@
+# core_clk
+# peri_clk
+# systimer
+# sysid
+# sysuart
+# jtag_uart
+# peripheral_bridge
+# led
+# psw
+# dipsw
+# gpio0
+# sdram
+# vga
+set_global_assignment -name TCL_FILE [file join $::quartus(qip_path) "vga_component/vga_component_hw.tcl"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "vga_component/vga_component.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "vga_component/vga_avm.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "vga_component/vga_linebuffer.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "vga_component/vga_syncgen.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "vga.vhd"]
+# nios2_fast_fpu
+set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) "nios2_fast_fpu.sdc"]
+set_global_assignment -name SOURCE_FILE [file join $::quartus(qip_path) "nios2_fast_fpu.ocp"]
+# nios2_fast_fpu_pixelsimd_inst
+set_global_assignment -name TCL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_hw.tcl"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_blend_u8.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_mult_s8xs10.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_mult_u8xu8.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_sat_u8.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "custom_intsr_pixel/pixelsimd_yuvdec.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "nios2_fast_fpu_pixelsimd_inst.vhd"]
+# nios2_fast_fpu_fpoint
+set_global_assignment -name TCL_FILE [file join $::quartus(ip_rootpath) "altera/nios2_ip/altera_nios_custom_instr_floating_point_qsys/fpoint_qsys_hw.tcl"]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(ip_rootpath) "altera/nios2_ip/altera_nios_custom_instr_floating_point_qsys/fpoint_wrapper.v"]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(ip_rootpath) "altera/nios2_ip/altera_nios_custom_instr_floating_point_qsys/fpoint_qsys.v"]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(ip_rootpath) "altera/nios2_ip/altera_nios_custom_instr_floating_point_qsys/fpoint_hw_qsys.v"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "nios2_fast_fpu_fpoint.vhd"]
+# mmcdma
+set_global_assignment -name TCL_FILE [file join $::quartus(qip_path) "mmcdma/avalonif_mmcdma_hw.tcl"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mmcdma/avalonif_mmcdma.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mmcdma/avalonif_mmc.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mmcdma/dmamem.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "mmcdma.vhd"]
+# spu
+set_global_assignment -name TCL_FILE [file join $::quartus(qip_path) "loreley/avalonif_spu_hw.tcl"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/avalonif_spu.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_businterface.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_cacheram.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_core.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_dacif_bu9480f_ds.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_decoder.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_dpram.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_envram.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_irqencode.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_lfsr.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_slotengine.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_waveadder.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/loreley_wromcache.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/multiple_16x16.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/multiple_16x9.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/STARROSE_SPU.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/wavebuffer.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/wsg_dsdac8.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "loreley/wsg_spdif.vhd"]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "spu.vhd"]
+# ipl_memory
+# null
+set_global_assignment -name SDC_FILE [file join $::quartus(ip_rootpath) "altera/sopc_builder_ip/altera_avalon_clock_adapter/altera_avalon_clock_adapter.sdc"]
+set_global_assignment -name SOPC_BUILDER_SIGNATURE_ID "0024A576CE7B0000013D9819F16A"
+set_global_assignment -entity "nios2_fpu" -name IP_TOOL_NAME "sopc"
+set_global_assignment -entity "nios2_fpu" -name IP_TOOL_VERSION "12.1sp1"
+set_global_assignment -entity "nios2_fpu" -name IP_TOOL_ENV "sopc"

@@ -1,0 +1,129 @@
+Altera SOPC Builder Version 12.11 Build 243
+Copyright (c) 1999-2009 Altera Corporation.  All rights reserved.
+
+
+No .sopc_builder configuration file(!)
+# 2013.03.24 01:35:04 (*) mk_custom_sdk starting
+# 2013.03.24 01:35:04 (*) Reading project D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu.ptf.
+
+# 2013.03.24 01:35:04 (*) Finding all CPUs
+# 2013.03.24 01:35:04 (*) Finding all available components
+# 2013.03.24 01:35:04 (*) Reading D:/PROJECT/DE0/cineraria_nano_DVI/.sopc_builder/install.ptf
+
+# 2013.03.24 01:35:04 (*) Found 63 components
+
+# 2013.03.24 01:35:05 (*) Finding all peripherals
+
+# 2013.03.24 01:35:05 (*) Finding software components
+
+# 2013.03.24 01:35:05 (*) (Legacy SDK Generation Skipped)
+# 2013.03.24 01:35:05 (*) (All TCL Script Generation Skipped)
+# 2013.03.24 01:35:05 (*) (No Libraries Built)
+# 2013.03.24 01:35:05 (*) (Contents Generation Skipped)
+# 2013.03.24 01:35:05 (*) mk_custom_sdk finishing
+
+# 2013.03.24 01:35:05 (*) Starting generation for system: nios2_fpu.
+
+..
+.
+.
+.
+....
+.
+.
+..
+.....
+....
+
+# 2013.03.24 01:35:07 (*) Running Generator Program for systimer
+
+# 2013.03.24 01:35:08 (*) Running Generator Program for sysid
+
+# 2013.03.24 01:35:10 (*) Running Generator Program for sysuart
+
+# 2013.03.24 01:35:12 (*) Running Generator Program for jtag_uart
+
+# 2013.03.24 01:35:13 (*) Running Generator Program for led
+
+# 2013.03.24 01:35:15 (*) Running Generator Program for psw
+
+# 2013.03.24 01:35:16 (*) Running Generator Program for dipsw
+
+# 2013.03.24 01:35:17 (*) Running Generator Program for gpio0
+
+# 2013.03.24 01:35:18 (*) Running Generator Program for sdram
+
+# 2013.03.24 01:35:20 (*) Running Generator Program for nios2_fast_fpu
+
+# 2013.03.24 01:35:22 (*) Starting Nios II generation
+# 2013.03.24 01:35:22 (*)   Checking for plaintext license.
+# 2013.03.24 01:35:23 (*)   Plaintext license not found.
+# 2013.03.24 01:35:23 (*)   Checking for encrypted license (non-evaluation).
+# 2013.03.24 01:35:24 (*)   Encrypted license found.  SOF will not be time-limited.
+# 2013.03.24 01:35:24 (*)   Getting CPU configuration settings
+# 2013.03.24 01:35:24 (*)   Elaborating CPU configuration settings
+# 2013.03.24 01:35:24 (*)   Creating all objects for CPU
+
+# 2013.03.24 01:35:24 (*)     Testbench
+# 2013.03.24 01:35:24 (*)     Instruction decoding
+# 2013.03.24 01:35:24 (*)       Instruction fields
+# 2013.03.24 01:35:24 (*)       Instruction decodes
+# 2013.03.24 01:35:25 (*)       Signals for RTL simulation waveforms
+# 2013.03.24 01:35:25 (*)       Instruction controls
+# 2013.03.24 01:35:25 (*)     Pipeline frontend
+# 2013.03.24 01:35:25 (*)     Pipeline backend
+# 2013.03.24 01:35:30 (*)   Generating HDL from CPU objects
+# 2013.03.24 01:35:41 (*)   Creating encrypted HDL
+
+# 2013.03.24 01:35:46 (*) Done Nios II generation
+
+# 2013.03.24 01:35:47 (*) Running Generator Program for ipl_memory
+
+# 2013.03.24 01:35:48 (*) Running Generator Program for nios2_fpu_clock_0
+
+# 2013.03.24 01:35:50 (*) Running Generator Program for nios2_fpu_burst_0
+
+# 2013.03.24 01:35:51 (*) Running Generator Program for nios2_fpu_burst_1
+
+# 2013.03.24 01:35:53 (*) Running Generator Program for nios2_fpu_burst_2
+
+# 2013.03.24 01:35:55 (*) Running Generator Program for nios2_fpu_burst_3
+
+# 2013.03.24 01:35:57 (*) Running Generator Program for nios2_fpu_burst_4
+
+# 2013.03.24 01:35:58 (*) Running Generator Program for nios2_fpu_burst_5
+
+# 2013.03.24 01:36:00 (*) Running Generator Program for nios2_fpu_burst_6
+
+# 2013.03.24 01:36:02 (*) Running Generator Program for nios2_fpu_burst_7
+
+# 2013.03.24 01:36:04 (*) Running Generator Program for nios2_fpu_burst_8
+
+# 2013.03.24 01:36:06 (*) Running Generator Program for peripheral_bridge
+
+.
+
+
+# 2013.03.24 01:36:09 (*) Running Test Generator Program for sdram
+
+# 2013.03.24 01:36:10 (*) Making arbitration and system (top) modules.
+
+# 2013.03.24 01:36:38 (*) Generating Quartus symbol for top level: nios2_fpu
+
+# 2013.03.24 01:36:38 (*) Generating Symbol D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu.bsf
+
+# 2013.03.24 01:36:38 (*) Creating command-line system-generation script: D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu_generation_script
+
+# 2013.03.24 01:36:38 (*) Running setup for HDL simulator: modelsim
+
+
+# 2013.03.24 01:36:39 (*) Completed generation for system: nios2_fpu.
+# 2013.03.24 01:36:39 (*) THE FOLLOWING SYSTEM ITEMS HAVE BEEN GENERATED:
+  SOPC Builder database : D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu.ptf 
+  System HDL Model : D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu.vhd 
+  System Generation Script : D:/PROJECT/DE0/cineraria_nano_DVI/nios2_fpu_generation_script 
+
+# 2013.03.24 01:36:39 (*) SUCCESS: SYSTEM GENERATION COMPLETED.
+
+
+Press 'Exit' to exit.

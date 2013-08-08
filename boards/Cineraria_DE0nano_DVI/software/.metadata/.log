@@ -1,0 +1,19 @@
+!SESSION 2013-08-09 07:18:11.455 -----------------------------------------------
+eclipse.buildId=M20120208-0800
+java.version=1.6.0_23
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=ja_JP
+Framework arguments:  -product org.eclipse.epp.package.cpp.product -perspective com.altera.sbtgui.ui.cPerspective
+Command-line arguments:  -data /home/shuta/projects/rubic/boards/Cineraria_DE0nano_DVI/software -os linux -ws gtk -arch x86 -product org.eclipse.epp.package.cpp.product -perspective com.altera.sbtgui.ui.cPerspective
+
+!ENTRY org.eclipse.cdt.core 1 0 2013-08-09 07:18:42.022
+!MESSAGE Indexed 'Cineraria_nano_elfload' (4 sources, 17 headers) in 0.95 sec: 310 declarations; 1,386 references; 20 unresolved inclusions; 0 syntax errors; 25 unresolved names (1.45%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2013-08-09 07:18:43.982
+!MESSAGE Indexed 'Cineraria_nano_std_bsp' (86 sources, 64 headers) in 1.93 sec: 1,095 declarations; 3,036 references; 123 unresolved inclusions; 5 syntax errors; 241 unresolved names (5.51%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2013-08-09 07:18:46.337
+!MESSAGE Indexed 'nano_bmpwav' (12 sources, 23 headers) in 2.35 sec: 1,062 declarations; 6,807 references; 53 unresolved inclusions; 0 syntax errors; 107 unresolved names (1.34%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2013-08-09 07:18:47.789
+!MESSAGE Indexed 'Cineraria_nano_elfload_bsp' (86 sources, 64 headers) in 1.44 sec: 1,079 declarations; 2,787 references; 123 unresolved inclusions; 5 syntax errors; 219 unresolved names (5.36%)

@@ -1,0 +1,10 @@
+
+**** Clean-only build of configuration Nios II for project nano_bmpwav ****
+
+make clean 
+/bin/sh: line 0: igncr: invalid option name
+/bin/sh: line 0: igncr: invalid option name
+/bin/sh: line 0: igncr: invalid option name
+[nano_bmpwav clean complete]
+
+**** Build Finished ****

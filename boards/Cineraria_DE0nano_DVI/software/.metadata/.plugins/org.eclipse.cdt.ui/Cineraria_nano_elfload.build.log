@@ -1,0 +1,10 @@
+
+**** Clean-only build of configuration Nios II for project Cineraria_nano_elfload ****
+
+make clean 
+/bin/sh: line 0: igncr: invalid option name
+/bin/sh: line 0: igncr: invalid option name
+/bin/sh: line 0: igncr: invalid option name
+[Cineraria_nano_elfload clean complete]
+
+**** Build Finished ****
