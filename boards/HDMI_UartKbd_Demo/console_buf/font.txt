@@ -1,0 +1,8 @@
+---------------- 00
+---------------- 10
+ !"#$%&'()*+,-./ 20
+0123456789:;<=>? 30
+@ABCDEFGHIJKLMNO 40
+PQRSTUVWXYZ[\]^_ 50
+`abcdefghijklmno 60
+pqrstuvwxyz{|}~- 70
