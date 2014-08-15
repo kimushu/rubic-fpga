@@ -1,10 +1,14 @@
+--------------------------------------------------------------------------------
+-- Project Rubic
+-- RiteVM to NiosII instruction converter
+--------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity rubic_r2n_converter is
   generic (
-    INST_ADDR_WIDTH : integer range 4 to 26 := 26
+    RITE_MEM_WIDTH  : integer range 4 to 25 := 25 -- 32MiB max
   );
   port (
     -- Common signals
@@ -15,22 +19,20 @@ entity rubic_r2n_converter is
     r_address       : out std_logic_vector(30 downto 2);
     r_read          : out std_logic;
     r_readdata      : in  std_logic_vector(31 downto 0);
-    r_readdatavalid : in  std_logic;
     r_waitrequest   : in  std_logic;
 
-    -- NiosII output port (128MiB space)
-    n_address       : in  std_logic_vector(INST_ADDR_WIDTH downto 4);
+    -- NiosII output port (128MiB space max)
+    n_address       : in  std_logic_vector(RITE_MEM_WIDTH+2-1 downto 2);
     n_read          : in  std_logic;
-    n_readdata      : out std_logic_vector(127 downto 0);
-    n_readdatavalid : out std_logic;
+    n_readdata      : out std_logic_vector(31 downto 0);
     n_waitrequest   : out std_logic;
 
     -- Control port
-    c_address       : in  std_logic_vector(8 downto 2);
+    c_address       : in  std_logic_vector(6 downto 0);
     c_write         : in  std_logic;
     c_writedata     : in  std_logic_vector(31 downto 0);
     c_read          : in  std_logic;
-    c_readdata      : out std_logic_vector(31 downto 0)
+    c_readdata      : out std_logic_vector(31 downto 0) := (others => '0')
   );
 end entity rubic_r2n_converter;
 
@@ -38,6 +40,7 @@ architecture rtl of rubic_r2n_converter is
 
   --------------------------------------------------------------------------------
   -- RiteVM opcode
+  -- {{{
   constant ROP_NOP        : integer := 0;   --         no operation
   constant ROP_MOVE       : integer := 1;   -- A B     R(A) := R(B)
   constant ROP_LOADL      : integer := 2;   -- A Bx    R(A) := Lit(Bx)
@@ -119,14 +122,18 @@ architecture rtl of rubic_r2n_converter is
   constant ROP_RSVD3      : integer := 78;  --         reserved instruction #3
   constant ROP_RSVD4      : integer := 79;  --         reserved instruction #4
   constant ROP_RSVD5      : integer := 80;  --         reserved instruction #5
+  -- }}}
 
-  constant MRB_SYMBOL_FLAG    : integer := 16#0e#;  -- defined in mruby/boxing_word.h
-  constant MRB_SPECIAL_SHIFT  : integer := 8;       -- defined in mruby/boxing_word.h
-  constant QTRUE          : integer := 4;   -- Qtrue defined in mruby/value.h
-  constant QFALSE         : integer := 2;   -- Qfalse defined in mruby/value.h
+  constant MRB_FIXNUM_SHIFT   : integer := 1;
+  constant MRB_FIXNUM_FLAG    : integer := 1;
+  constant MRB_SYMBOL_FLAG    : integer := 16#0e#;
+  constant MRB_SPECIAL_SHIFT  : integer := 8;
+  constant MRB_QFALSE         : integer := 2;
+  constant MRB_QTRUE          : integer := 4;
 
   --------------------------------------------------------------------------------
   -- NiosII opcode
+  -- {{{
   constant NOP_ADD        : integer := 16#1883a#; -- Type R
   constant NOP_ADDI       : integer := 16#04#;    -- Type I
   constant NOP_BEQ        : integer := 16#26#;    -- Type I
@@ -139,12 +146,20 @@ architecture rtl of rubic_r2n_converter is
   constant NOP_NEXTPC     : integer := 16#0e03a#; -- Type R
   constant NOP_ORHI       : integer := 16#34#;    -- Type I
   constant NOP_ORI        : integer := 16#14#;    -- Type I
-  constant NOP_RET        : integer := 16#0283a#; -- Type R (rA=31)
+--constant NOP_RET        : integer := 16#0283a#; -- Type R (rA=31)
   constant NOP_SLLI       : integer := 16#0903a#; -- Type R
   constant NOP_STW        : integer := 16#15#;    -- Type I
+  -- }}}
 
-  function NOP_TYPE_I(op, a, b, imm16: integer) return std_logic_vector is
-    variable i : std_logic_vector(31 downto 0);
+  subtype r_inst_t  is std_logic_vector(31 downto 0);
+  subtype n_inst_t  is std_logic_vector(31 downto 0);
+  subtype funcptr_t is std_logic_vector(27 downto 2);
+  subtype regnum_t  is integer range 0 to 31;
+  subtype regitem_t is std_logic_vector(30 downto 0);
+  type regarray_t is array (2**7-1 downto 0) of regitem_t;
+
+  function NOP_TYPE_I(op, a, b, imm16: integer) return n_inst_t is
+    variable i : n_inst_t;
   begin
     i(31 downto 27) := std_logic_vector(to_unsigned(a, 5));
     i(26 downto 22) := std_logic_vector(to_unsigned(b, 5));
@@ -153,8 +168,8 @@ architecture rtl of rubic_r2n_converter is
     return i;
   end function NOP_TYPE_I;
 
-  function NOP_TYPE_R(op, a, b, c: integer) return std_logic_vector is
-    variable i : std_logic_vector(31 downto 0);
+  function NOP_TYPE_R(op, a, b, c: integer) return n_inst_t is
+    variable i : n_inst_t;
   begin
     i(31 downto 27) := std_logic_vector(to_unsigned(a, 5));
     i(26 downto 22) := std_logic_vector(to_unsigned(b, 5));
@@ -163,30 +178,49 @@ architecture rtl of rubic_r2n_converter is
     return i;
   end function NOP_TYPE_R;
 
-  function NOP_TYPE_J(op: integer; imm26: std_logic_vector) return std_logic_vector is
-    variable i : std_logic_vector(31 downto 0);
+  function NOP_TYPE_J(op: integer; imm26: std_logic_vector) return n_inst_t is
+    variable i : n_inst_t;
   begin
     i(31 downto  6) := imm26;
     i( 5 downto  0) := std_logic_vector(to_unsigned(op, 6));
     return i;
   end function NOP_TYPE_J;
 
-  constant NOP_FILLER : std_logic_vector(31 downto 0) := NOP_TYPE_R(NOP_ADD, 0, 0, 0);
+  constant NOP_FILLER : n_inst_t := NOP_TYPE_R(NOP_ADD, 0, 0, 0);
 
-  subtype r_inst_t is std_logic_vector(31 downto 0);
-  subtype n_inst_t is std_logic_vector(31 downto 0);
+  --------------------------------------------------------------------------------
+  -- Control register
+  constant CADDR_RBASE  : integer := ROP_NOP;
+  constant CADDR_REGSTK : integer := ROP_MOVE;
+  constant CADDR_REGLIT : integer := ROP_LOADL;
+  constant CADDR_REGSYM : integer := ROP_LOADSYM;
+  constant CADDR_LEAVE  : integer := ROP_STOP;
 
-  subtype c_funcptr_t is std_logic_vector(25 downto 0);
+  signal r_faddr_w  : std_logic_vector(RITE_MEM_WIDTH-1 downto 2); -- Address to fetch
+  signal r_faddr_r  : std_logic_vector(RITE_MEM_WIDTH-1 downto 2); -- Fetched address
+  signal r_read_r   : std_logic;  -- Read signal
+  signal r_inst_r   : r_inst_t;   -- Fetched RiteVM instruction
+  signal r_valid_r  : std_logic;  -- Valid of r_inst_r
 
-  signal c_regstk_r : integer range 0 to 31;
-  signal c_reglit_r : integer range 0 to 31;
-  signal c_regsym_r : integer range 0 to 31;
-  signal c_fptr_r   : c_funcptr_t;
-  signal c_gptr_r   : c_funcptr_t;
+  signal n_inst_r   : n_inst_t;   -- Output Nios II instruction
+  signal n_wait_r   : std_logic;  -- Output Nios II wait request
+  signal n_insts_w  : std_logic_vector(n_inst_t'length*4-1 downto 0);
+
+  shared variable c_regmem : regarray_t;
+  signal c_addra_w  : integer range 0 to 2**7-1;
+  signal c_reada_r  : regitem_t;
+  signal c_addrb_w  : integer range 0 to 2**7-1;
+  signal c_rbase_r  : std_logic_vector(30 downto RITE_MEM_WIDTH); -- RiteVM memory base
+  signal c_regstk_r : regnum_t;   -- Register number for stack
+  signal c_reglit_r : regnum_t;   -- Register number for literals
+  signal c_regsym_r : regnum_t;   -- Register number for symbols
+  signal c_deleg_r  : funcptr_t;  -- Delegate function pointer
+  signal c_leave_r  : funcptr_t;  -- Rubic leave routine pointer
 
   --------------------------------------------------------------------------------
   -- Rite -> NiosII instruction convertion map
   impure function INST_RITE_TO_NIOS2(r_inst: r_inst_t) return std_logic_vector is
+  -- {{{
     variable r_op   : integer range 0 to 2**7-1;
     variable r_a    : integer range 0 to 2**9-1;
     variable r_b    : integer range 0 to 2**9-1;
@@ -275,13 +309,13 @@ architecture rtl of rubic_r2n_converter is
     when ROP_LOADT =>
       -- movi   r2, Qtrue
       -- stw    r2, A*4(rSTK)
-      n_1 := NOP_TYPE_I(NOP_ADDI, 0, 2, QTRUE);
+      n_1 := NOP_TYPE_I(NOP_ADDI, 0, 2, MRB_QTRUE);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_LOADF =>
       -- movi   r2, Qfalse
       -- stw    r2, A*4(rSTK)
-      n_1 := NOP_TYPE_I(NOP_ADDI, 0, 2, QFALSE);
+      n_1 := NOP_TYPE_I(NOP_ADDI, 0, 2, MRB_QFALSE);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_GETGLOBAL | ROP_GETIV | ROP_GETCV | ROP_GETCONST =>
@@ -290,7 +324,7 @@ architecture rtl of rubic_r2n_converter is
         -- call   fptr
         -- stw    r2, A*4(rSTK)
         n_1 := NOP_TYPE_I(NOP_LDHU, c_regsym_r, 5, r_bx * 2);
-        n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+        n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
         n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
       else
         giveup := true;
@@ -303,7 +337,7 @@ architecture rtl of rubic_r2n_converter is
         -- call   fptr
         n_1 := NOP_TYPE_I(NOP_LDHU, c_regsym_r, 5, r_bx * 2);
         n_2 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 6, r_a * 4);
-        n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+        n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       else
         giveup := true;
       end if;
@@ -313,7 +347,7 @@ architecture rtl of rubic_r2n_converter is
       -- call   fptr
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_ORI, 0, 5, r_bx);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_SETSPECIAL =>
@@ -322,7 +356,7 @@ architecture rtl of rubic_r2n_converter is
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_ORI, 0, 5, r_bx);
       n_2 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 6, r_a * 4);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_GETMCNST =>
       if (r_bx < 2**14) then
@@ -332,7 +366,7 @@ architecture rtl of rubic_r2n_converter is
         -- stw    r2, A*4(rSTK)
         n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, r_a * 4);
         n_2 := NOP_TYPE_I(NOP_LDHU, c_regsym_r, 6, r_bx * 2);
-        n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+        n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
         n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
       else
         giveup := true;
@@ -347,7 +381,7 @@ architecture rtl of rubic_r2n_converter is
         n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, (r_a + 1) * 4);
         n_2 := NOP_TYPE_I(NOP_LDHU, c_regsym_r, 6, r_bx * 2);
         n_3 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 7, r_a * 4);
-        n_4 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+        n_4 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       else
         giveup := true;
       end if;
@@ -359,7 +393,7 @@ architecture rtl of rubic_r2n_converter is
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_ADDI, 0, 5, r_c);
       n_2 := NOP_TYPE_I(NOP_ADDI, 0, 6, r_b * 4);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_SETUPVAR =>
@@ -370,7 +404,7 @@ architecture rtl of rubic_r2n_converter is
       n_1 := NOP_TYPE_I(NOP_ADDI, 0, 5, r_c);
       n_2 := NOP_TYPE_I(NOP_ADDI, 0, 6, r_b * 4);
       n_3 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 7, r_a * 4);
-      n_4 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_4 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_JMP =>
       -- if ((-2**11-12 <= r_sbx1) and (r_sbx1 < 2**11-12)) then
@@ -389,8 +423,8 @@ architecture rtl of rubic_r2n_converter is
         -- bne    r2, r0, 4+(sBx-1)*16  (for JMPIF)
         -- beq    r2, r0, 4+(sBx-1)*16  (for JMPNOT)
         n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 2, r_a * 4);
-        n_2 := NOP_TYPE_I(NOP_ORI, 2, 2, QFALSE);
-        n_3 := NOP_TYPE_I(NOP_ADDI, 2, 2, -QFALSE);
+        n_2 := NOP_TYPE_I(NOP_ORI, 2, 2, MRB_QFALSE);
+        n_3 := NOP_TYPE_I(NOP_ADDI, 2, 2, -MRB_QFALSE);
         if (r_op = ROP_JMPIF) then
           n_4 := NOP_TYPE_I(NOP_BNE, 2, 0, (r_sbx1 * 16));
         else
@@ -408,7 +442,7 @@ architecture rtl of rubic_r2n_converter is
         -- call   fptr
         n_1 := NOP_TYPE_R(NOP_NEXTPC, 0, 0, 5);
         n_2 := NOP_TYPE_I(NOP_ADDI, 5, 5, 12 + (r_sbx1 * 16));
-        n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+        n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       else
         giveup := true;
       end if;
@@ -416,26 +450,28 @@ architecture rtl of rubic_r2n_converter is
     when ROP_RESCUE =>
       -- call   fptr
       -- stw    r2, A*4(rSTK)
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_POPERR | ROP_EPOP =>
       -- movi   r5, A
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_ADDI, 0, 5, r_a);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_RAISE =>
+      giveup := true; -- TODO
       -- ldw    r5, A*4(rSTK)
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, r_a * 4);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_EPUSH =>
+      giveup := true; -- TODO
       -- movui  r5, Bx
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_ORI, 0, 5, r_bx);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_SEND | ROP_SENDB | ROP_TAILCALL =>
       giveup := true; -- TODO
@@ -446,7 +482,7 @@ architecture rtl of rubic_r2n_converter is
       n_1 := NOP_TYPE_I(NOP_ADDI, c_regstk_r, 5, r_a * 4);
       n_2 := NOP_TYPE_I(NOP_LDHU, c_regsym_r, 6, r_b * 2);
       n_3 := NOP_TYPE_I(NOP_ADDI, 0, 7, r_c);
-      n_4 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_4 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_CALL | ROP_SUPER =>
       giveup := true; -- TODO
@@ -455,23 +491,25 @@ architecture rtl of rubic_r2n_converter is
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_ADDI, c_regstk_r, 5, r_a * 4);
       n_3 := NOP_TYPE_I(NOP_ADDI, 0, 6, r_c);
-      n_4 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_4 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_ARGARY =>
+      giveup := true; -- TODO
       -- movui  r5, Bx
       -- call   fptr
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_ORI, 0, 5, r_bx);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_ENTER =>
+      giveup := true; -- TODO
       -- movhi  r5, %hi(Ax)
       -- ori    r5, r5, %lo(Ax)
       -- call   fptr
       n_1 := NOP_TYPE_I(NOP_ORHI, 0, 5, r_ax / (2**16));
       n_2 := NOP_TYPE_I(NOP_ORI, 5, 5, r_ax mod (2**16));
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
 
     when ROP_RETURN =>
       giveup := true; -- TODO
@@ -480,14 +518,15 @@ architecture rtl of rubic_r2n_converter is
       -- jmpi   fptr
       n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, r_a * 4);
       n_2 := NOP_TYPE_I(NOP_ADDI, 0, 6, r_b);
-      n_3 := NOP_TYPE_J(NOP_JMPI, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_JMPI, c_deleg_r);
 
     when ROP_BLKPUSH =>
+      giveup := true; -- TODO
       -- movui  r5, Bx
       -- call   fptr
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_ORI, 0, 5, r_bx);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_ADD | ROP_SUB | ROP_MUL | ROP_DIV |
@@ -498,17 +537,17 @@ architecture rtl of rubic_r2n_converter is
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, r_a * 4);
       n_2 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 6, (r_a + 1) * 4);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when ROP_ADDI | ROP_SUBI =>
       -- ldw    r5, A*4(rSTK)
-      -- movui  r6, Bx
+      -- movui  r6, (C<<MRB_FIXNUM_SHIFT) + MRB_FIXNUM_FLAG
       -- call   fptr
       -- stw    r2, A*4(rSTK)
       n_1 := NOP_TYPE_I(NOP_LDW, c_regstk_r, 5, r_a * 4);
-      n_2 := NOP_TYPE_I(NOP_ORI, 0, 6, r_bx);
-      n_3 := NOP_TYPE_J(NOP_CALL, c_fptr_r);
+      n_2 := NOP_TYPE_I(NOP_ORI, 0, 6, (r_c * 2**MRB_FIXNUM_SHIFT) + MRB_FIXNUM_FLAG);
+      n_3 := NOP_TYPE_J(NOP_CALL, c_deleg_r);
       n_4 := NOP_TYPE_I(NOP_STW, c_regstk_r, 2, r_a * 4);
 
     when others =>
@@ -519,106 +558,131 @@ architecture rtl of rubic_r2n_converter is
       -- nextpc r2
       -- movhi  r3, %hi(r_inst)
       -- ori    r3, %lo(r_inst)
-      -- ret
+      -- jmpi   gptr
       n_1 := NOP_TYPE_R(NOP_NEXTPC, 0, 0, 2);
       n_2 := NOP_TYPE_I(NOP_ORHI, 0, 3, to_integer(unsigned(r_inst(31 downto 16))));
       n_3 := NOP_TYPE_I(NOP_ORI, 3, 3, to_integer(unsigned(r_inst(15 downto 0))));
-      n_4 := NOP_TYPE_R(NOP_RET, 31, 0, 0);
+      n_4 := NOP_TYPE_J(NOP_JMPI, c_leave_r);
     end if;
 
     return n_4 & n_3 & n_2 & n_1;
-  end function INST_RITE_TO_NIOS2;
-
-  impure function ADDR_NIOS2_TO_RITE(r_base, n_addr: std_logic_vector) return std_logic_vector is
-    variable r_addr : std_logic_vector(r_base'range);
-  begin
-    r_addr := r_base;
-    r_addr(n_addr'high-2 downto n_addr'low-2) :=
-      r_addr(n_addr'high-2 downto n_addr'low-2) or n_addr;
-    return r_addr;
-  end function ADDR_NIOS2_TO_RITE;
-
-  type c_funcary_t is array (2**7-1 downto 0) of c_funcptr_t;
-  shared variable c_funcary : c_funcary_t;
-
-  signal c_rbase_r    : std_logic_vector(r_address'range);
-  signal c_faddr_w    : integer range 0 to 2**(c_address'length)-1;
-  signal c_raddr_w    : integer range 0 to 2**(c_address'length)-1;
-  signal r_inst_1d_r  : r_inst_t;
-  signal r_inst_2d_r  : r_inst_t;
-  signal r_valid_r    : std_logic;
-  signal n_valid_r    : std_logic;
-  signal c_read_r     : c_funcptr_t;
+  end function INST_RITE_TO_NIOS2;  -- }}}
 
 begin -- rtl
 
-  c_faddr_w <= to_integer(unsigned(r_readdata(c_address'length-1 downto 0)));
-  c_raddr_w <= to_integer(unsigned(c_address));
-
-  process (clk) begin
-    if (rising_edge(clk)) then
-      if (c_write = '1') then
-        c_funcary(c_raddr_w) := c_writedata(c_funcptr_t'length+2-1 downto 2);
-      end if;
-      c_fptr_r  <= c_funcary(c_faddr_w);
-      c_read_r  <= c_funcary(c_raddr_w);
-    end if;
-  end process;
-
+  -- RiteVM instruction fetch
+  r_faddr_w <= n_address(RITE_MEM_WIDTH+2-1 downto 4);
+  r_address <= c_rbase_r & r_faddr_r;
+  r_read    <= r_read_r;
   process (clk) begin
     if (rising_edge(clk)) then
       if (reset = '1') then
-        r_inst_1d_r <= (others => '0');
-        r_inst_2d_r <= (others => '0');
-        r_valid_r   <= '0';
-        n_valid_r   <= '0';
-      else
-        r_inst_1d_r <= r_readdata;
-        r_inst_2d_r <= r_inst_1d_r;
-        r_valid_r   <= r_readdatavalid;
-        n_valid_r   <= r_valid_r;
+        r_faddr_r <= (others => '0');
+      elsif (n_read = '1') then
+        r_faddr_r <= r_faddr_w;
+      end if;
+    end if;
+  end process;
+  process (clk) begin
+    if (rising_edge(clk)) then
+      if (reset = '1') then
+        r_read_r  <= '0';
+        r_inst_r  <= (others => '1');
+        r_valid_r <= '0';
+      elsif ((r_read_r = '1') and (r_waitrequest = '0')) then
+        r_read_r  <= '0';
+        r_inst_r  <= r_readdata;
+        r_valid_r <= '1';
+      elsif ((n_read = '1') and
+             ((r_faddr_w /= r_faddr_r) or (r_valid_r = '0'))) then
+        r_read_r  <= '1';
+        r_valid_r <= '0';
       end if;
     end if;
   end process;
 
-  r_address <= ADDR_NIOS2_TO_RITE(c_rbase_r, n_address);
-  r_read    <= n_read;
+  -- NiosII convertion
+  n_readdata    <= n_inst_r;
+  n_waitrequest <= n_wait_r;
+  n_insts_w     <= INST_RITE_TO_NIOS2(r_inst_r);
+  process (clk) begin
+    if (rising_edge(clk)) then
+      if (reset = '1') then
+        n_wait_r  <= '1';
+      elsif (n_wait_r = '0') then
+        n_wait_r  <= '1';
+      elsif ((n_read = '1') and
+             ((r_faddr_w = r_faddr_r) and (r_valid_r /= '0'))) then
+        n_wait_r  <= '0';
+      end if;
+    end if;
+  end process;
+  process (clk) begin
+    if (rising_edge(clk)) then
+      if (reset = '1') then
+        n_inst_r  <= NOP_FILLER;
+      else
+        case n_address(3 downto 2) is
+          when "00" =>
+            n_inst_r <= n_insts_w(n_inst_t'length*1-1 downto n_inst_t'length*0);
+          when "01" =>
+            n_inst_r <= n_insts_w(n_inst_t'length*2-1 downto n_inst_t'length*1);
+          when "10" =>
+            n_inst_r <= n_insts_w(n_inst_t'length*3-1 downto n_inst_t'length*2);
+          when others =>
+            n_inst_r <= n_insts_w(n_inst_t'length*4-1 downto n_inst_t'length*3);
+        end case;
+      end if;
+    end if;
+  end process;
 
-  n_readdata      <= INST_RITE_TO_NIOS2(r_inst_2d_r);
-  n_readdatavalid <= n_valid_r;
-  n_waitrequest   <= r_waitrequest;
-
+  -- Control/cache registers
+  c_readdata(regitem_t'range) <= c_reada_r;
+  c_addra_w   <= to_integer(unsigned(c_address));
+  c_addrb_w   <= to_integer(unsigned(r_readdata(c_address'length-1 downto 0)));
+  process (clk) begin
+    -- Port A (read/write through avm)
+    if (rising_edge(clk)) then
+      if (c_write = '1') then
+        c_regmem(c_addra_w) := c_writedata(regitem_t'range);
+      end if;
+      c_reada_r <= c_regmem(c_addra_w);
+    end if;
+  end process;
+  process (clk) begin
+    -- Port B (read from internal logic)
+    if (rising_edge(clk)) then
+      if ((r_read_r = '1') and (r_waitrequest = '0')) then
+        c_deleg_r <= c_regmem(c_addrb_w)(c_deleg_r'range);
+      end if;
+    end if;
+  end process;
   process (clk) begin
     if (rising_edge(clk)) then
       if (reset = '1') then
         c_rbase_r   <= (others => '0');
-        c_gptr_r    <= (others => '0');
         c_regstk_r  <= 0;
         c_reglit_r  <= 0;
         c_regsym_r  <= 0;
-      else
-        if (c_write = '1') then
-          case (c_raddr_w) is
-          when ROP_NOP =>
-            c_rbase_r <= c_writedata(r_address'range);
-          when ROP_LOADI =>
-            c_gptr_r <= c_writedata(c_funcptr_t'length+2-1 downto 2);
-          when ROP_MOVE =>
-            c_regstk_r <= to_integer(unsigned(c_writedata(6 downto 2)));
-          when ROP_LOADL =>
-            c_reglit_r <= to_integer(unsigned(c_writedata(6 downto 2)));
-          when ROP_LOADSYM =>
-            c_regsym_r <= to_integer(unsigned(c_writedata(6 downto 2)));
+        c_leave_r   <= (others => '0');
+      elsif (c_write = '1') then
+        case (to_integer(unsigned(c_address))) is
+          when CADDR_RBASE =>
+            c_rbase_r   <= c_writedata(c_rbase_r'range);
+          when CADDR_REGSTK =>
+            c_regstk_r  <= to_integer(unsigned(c_writedata(4 downto 0)));
+          when CADDR_REGLIT =>
+            c_reglit_r  <= to_integer(unsigned(c_writedata(4 downto 0)));
+          when CADDR_REGSYM =>
+            c_regsym_r  <= to_integer(unsigned(c_writedata(4 downto 0)));
+          when CADDR_LEAVE =>
+            c_leave_r   <= c_writedata(c_leave_r'range);
           when others =>
             null;
-          end case;
-        end if;
+        end case;
       end if;
     end if;
   end process;
 
-  c_readdata(31 downto c_funcptr_t'length+2) <= (others => '0');
-  c_readdata(c_funcptr_t'length+1 downto 2) <= c_read_r;
-  c_readdata(1 downto 0) <= (others => '0');
-
 end architecture rtl;
+-- vim: foldmethod=marker
