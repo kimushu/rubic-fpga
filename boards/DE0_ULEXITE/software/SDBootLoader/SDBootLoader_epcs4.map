@@ -1,0 +1,11 @@
+BLOCK		START ADDRESS		END ADDRESS
+
+SDBootLoader.hex		0x0007C000		0x0007EF0C
+
+
+
+Notes:
+
+- Data checksum for this conversion is 0x07D2CA93
+
+- All the addresses in this file are byte addresses
