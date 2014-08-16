@@ -98,7 +98,7 @@ const console_writer_font font_table = {
   .height = 16,
   .min_code = 0x20,
   .max_code = 0x7e,
-  .data = {
+  .glyphs = {
     0, // 20
     glyph_21,
     glyph_22,
