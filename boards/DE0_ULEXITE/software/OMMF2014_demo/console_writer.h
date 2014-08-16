@@ -23,22 +23,51 @@ typedef struct console_writer_font_s
   unsigned int height;
   unsigned char min_code;
   unsigned char max_code;
-  const unsigned short *data[];
+  const unsigned short *glyphs[];
 } console_writer_font;
+
+typedef struct console_writer_coord_s
+{
+  union {
+    short x;
+    short col;
+  };
+  union {
+    short y;
+    short row;
+  };
+} console_writer_coord;
+
+typedef struct console_writer_size_s
+{
+  union {
+    short width;
+    short cols;
+  };
+  union {
+    short height;
+    short rows;
+  };
+} console_writer_size;
 
 typedef struct console_writer_state_s
 {
-  unsigned char *base;				// Memory base
-  unsigned int line_bytes;			// Bytes per line
-  unsigned int px_width;				// Width in pixels
-  unsigned int px_height;			// Height in pixels
-  unsigned int px_margin_left;		// Left margin in pixels
-  unsigned int px_margin_top;		// Top margin in pixels
-  unsigned int char_width;			// Width in characters
-  unsigned int char_height;			// Lines (Height in characters)
-  unsigned int start_line;			// Start line offset
-  char *buffer;						// Character buffer
+  unsigned int dest_base;			// Destination base address
+  unsigned int back_base;			// Background base address
+  unsigned int line_bytes;			// Bytes per pixel line
   const console_writer_font *font;	// Font table
+
+  console_writer_size screen;		// Screen size
+  console_writer_coord margin;		// Screen margin (left/top)
+
+  console_writer_size size;			// Number of characters
+  console_writer_coord next;		// Next position
+  console_writer_coord cursor;		// Cursor position
+  short start_row;					// Start line offset
+  unsigned short color;				// Current color
+
+  unsigned short **buffer_glyph;	// Glyph pointer buffer
+  unsigned short *buffer_color;		// Color buffer
 } console_writer_state;
 
 typedef struct console_writer_dev_s
