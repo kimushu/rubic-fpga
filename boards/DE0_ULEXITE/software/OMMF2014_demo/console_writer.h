@@ -15,7 +15,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-extern int console_writer_write_fd (alt_fd* fd, const char* ptr, int len);
+extern int console_writer_write_fd(alt_fd *fd, const char *ptr, int len);
 
 typedef struct console_writer_font_s
 {
@@ -75,6 +75,8 @@ typedef struct console_writer_dev_s
     alt_dev dev;
     console_writer_state state;
 } console_writer_dev;
+
+extern int console_writer_init(console_writer_state *sp);
 
 #ifdef __cplusplus
 }

@@ -155,6 +155,7 @@ C_SRCS += mruby.c
 C_SRCS += usbdrv.c
 C_SRCS += mrbtest_driver.c
 C_SRCS += console_writer.c
+C_SRCS += shnm8x16a.c
 CXX_SRCS :=
 ASM_SRCS :=
 

@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <malloc.h>
 #include "console_writer.h"
 
 #define CURSOR_HEIGHT 3
@@ -126,6 +127,7 @@ static int console_writer_write_char(console_writer_state *sp, unsigned char ch)
     sp->next.col = 0;
     return 0;
   case '\n':
+    sp->next.col = 0;
 linefield:
     sp->next.row = RING_INC(sp->next.row, sp->size.rows);
     if(sp->next.row == sp->start_row) {
@@ -172,3 +174,16 @@ int console_writer_write_fd(alt_fd *fd, const char *buffer, int space)
 
   return console_writer_write(&dev->state, buffer, space, fd->fd_flags);
 }
+
+int console_writer_init(console_writer_state *sp)
+{
+  sp->size.cols = sp->screen.width / sp->font->width;
+  sp->size.rows = sp->screen.height / sp->font->height;
+  sp->margin.x = (sp->screen.width - (sp->size.cols * sp->font->width)) / 2;
+  sp->margin.y = (sp->screen.height - (sp->size.rows * sp->font->height)) / 2;
+  sp->buffer_glyph = (unsigned short **)malloc(sizeof(unsigned short *) * sp->size.cols * sp->size.rows);
+  sp->buffer_color = (unsigned short *)malloc(sizeof(unsigned short) * sp->size.cols * sp->size.rows);
+  sp->color = 0;
+  console_writer_clear(sp);
+}
+
