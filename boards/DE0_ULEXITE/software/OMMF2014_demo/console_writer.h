@@ -9,6 +9,7 @@
 #define CONSOLE_WRITER_H_
 
 #include "sys/alt_dev.h"
+#include "os/alt_sem.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -66,8 +67,9 @@ typedef struct console_writer_state_s
   short start_row;					// Start line offset
   unsigned short color;				// Current color
 
-  unsigned short **buffer_glyph;	// Glyph pointer buffer
+  const unsigned short **buffer_glyph;	// Glyph pointer buffer
   unsigned short *buffer_color;		// Color buffer
+  ALT_SEM (lock)
 } console_writer_state;
 
 typedef struct console_writer_dev_s

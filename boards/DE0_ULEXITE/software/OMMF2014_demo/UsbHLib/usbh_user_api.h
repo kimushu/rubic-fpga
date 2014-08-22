@@ -52,7 +52,7 @@ extern "C" {
 
 void um_check_hub_status(); /* update hub status */
 void um_check_hub_status_core(int conn_num,st_usb_device *dev);
-char um_get_ascii_code(unsigned int d, unsigned int m);
+char um_get_ascii_code(unsigned int d, unsigned int m, int down);
 
 /* device lookup*/
 void um_set_dev_lookup();
@@ -76,7 +76,7 @@ void uh_mouse_attach_func_raw(void(*pf)(int size, unsigned char *buf));
 #ifdef USBH_USE_KEYBOARD
 st_usb_device* uh_keyboard_find(int conn_num,int ln);
 int uh_keyboard_available(int conn_num);
-void uh_keyboard_attach_func(void(*pf)(int key, int modifier));
+void uh_keyboard_attach_func(void(*pf)(int key, int modifier, int down));
 void uh_mouse_attach_func_raw(void(*pf)(int size, unsigned char *buf));
 int uh_keyboard_getchar();
 en_usb_status uh_keyboard_LED(unsigned char d);

@@ -5,6 +5,7 @@
 #include "sys/alt_dev.h"
 #include "priv/alt_file.h"
 #include "console_writer.h"
+#include <io.h>
 
 #define DEFINE_TASK(name, id, prio, stk_size) \
 	static OS_STK stk_##name[stk_size]; \
@@ -52,14 +53,30 @@ static console_writer_dev console_writer =
   }
 };
 
+const char *to_hex(unsigned v)
+{
+	static char buf[9];
+	static const char hex[] = "0123456789abcdef";
+	buf[7] = hex[v & 15]; v >>= 4;
+	buf[6] = hex[v & 15]; v >>= 4;
+	buf[5] = hex[v & 15]; v >>= 4;
+	buf[4] = hex[v & 15]; v >>= 4;
+	buf[3] = hex[v & 15]; v >>= 4;
+	buf[2] = hex[v & 15]; v >>= 4;
+	buf[1] = hex[v & 15]; v >>= 4;
+	buf[0] = hex[v & 15];
+	return buf;
+}
+
 int main(void)
 {/*
 	volatile alt_u32 *reg = (volatile alt_u32 *)ULEXITE_LCD_BASE;
 	*reg = 0xf800007b;
 	while(1); //-*/
+	IOWR(ULEXITE_LCD_BASE, 0, 0xf800007b);
 	console_writer_init(&console_writer.state);
 	alt_fd_list[STDOUT_FILENO].dev = &console_writer.dev;
-	puts("Hello world");
+	alt_fd_list[STDERR_FILENO].dev = &console_writer.dev;
 	CREATE_TASK(mruby, NULL);
 	CREATE_TASK(usbdrv, NULL);
 	OSStart();//-*/

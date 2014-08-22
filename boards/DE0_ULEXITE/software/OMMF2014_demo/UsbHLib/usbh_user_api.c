@@ -190,21 +190,39 @@ void um_check_hid_status() {
       if (dev != NULL) {
         status = ul_interrupt_in_transfer(i, dev,&size, buf);
         if (status != USBH_NAK) {
-#ifdef USBH_USE_KEYBOARD_BOOT_PROTOCOL
-          c = um_get_ascii_code(buf[2],buf[0]);
-          if ((c != 0)|(buf[0] !=0))
+#if defined(USBH_USE_KEYBOARD_BOOT_PROTOCOL) || !defined(USBH_USE_REPORT_DESCRIPTOR)
+          int npos, lpos;
+          unsigned char ch;
+          for(npos = 2; npos < 8 && (ch = buf[npos]) != 0; ++npos)
+          {
+            for(lpos = 0; lpos < 6; ++lpos)
+            {
+              if(dev->lastkeys[lpos] == ch) {
+                dev->lastkeys[lpos] = 0;
+                goto no_change;
+              }
+            }
+            c = um_get_ascii_code(ch, buf[0], 1);
             if(usbh_env.pf_keyboard != NULL)
-             (*usbh_env.pf_keyboard)(c, buf[0]);
-#else
-#ifdef USBH_USE_REPORT_DESCRIPTOR
-#else
-            c = um_get_ascii_code(buf[USBH_USE_KEYBOARD_K_IDX],
-                                buf[USBH_USE_KEYBOARD_M_IDX]);
-          if ((c != 0)|(buf[USBH_USE_KEYBOARD_M_IDX] !=0))
-          if(usbh_env.pf_keyboard != NULL)
-              (*usbh_env.pf_keyboard)(c, buf[USBH_USE_KEYBOARD_M_IDX]);
-#endif /*#ifdef USBH_USE_REPORT_DESCRIPTOR */
-#endif /*#ifdef USBH_USE_KEYBOARD_BOOT_PROTOCOL*/
+              (*usbh_env.pf_keyboard)(c, buf[0], 1);
+            no_change:;
+          }
+          if(npos == 2)
+          {
+            if(usbh_env.pf_keyboard != NULL)
+              (*usbh_env.pf_keyboard)(0, buf[0], 0);
+          }
+          for(lpos = 0; lpos < 6; ++lpos)
+          {
+            if((ch = dev->lastkeys[lpos]) != 0)
+            {
+              c = um_get_ascii_code(ch, buf[0], 0);
+              if(usbh_env.pf_keyboard != NULL)
+                (*usbh_env.pf_keyboard)(c, buf[0], 0);
+            }
+            dev->lastkeys[lpos] = buf[2 + lpos];
+          }
+#endif /*#if defined(USBH_USE_KEYBOARD_BOOT_PROTOCOL) || !defined(USBH_USE_REPORT_DESCRIPTOR) */
         }
       }
     }
@@ -362,7 +380,7 @@ int uh_keyboard_available(int conn_num) {
   }
   return 0;
 }
-void uh_keyboard_attach_func(void(*pf)(int key, int modifier)) {
+void uh_keyboard_attach_func(void(*pf)(int key, int modifier, int down)) {
   usbh_env.pf_keyboard = pf;
 }
 void uh_keyboard_attach_func_raw(void(*pf)(int size, unsigned char *buf)) {
@@ -383,7 +401,7 @@ int uh_keyboard_getchar() {
       if (dev != NULL) {
         status = ul_interrupt_in_transfer(1, dev,&size, buf);
         if (status != USBH_NAK) {
-          c = um_get_ascii_code(buf[2],buf[0]);
+          c = um_get_ascii_code(buf[2],buf[0],1);
           if (c != 0) return c;
         }
       }
@@ -419,7 +437,7 @@ en_usb_status uh_keyboard_LED(unsigned char d) {
 #define UK_RIGHT_ALT    0x40
 #define UK_RIGHT_GUI    0x80
 
-char um_get_ascii_code(unsigned int d, unsigned int m) {
+char um_get_ascii_code(unsigned int d, unsigned int m, int down) {
 /*
 0 LEFT CTRL
 1 LEFT SHIFT
@@ -432,13 +450,13 @@ char um_get_ascii_code(unsigned int d, unsigned int m) {
 */
   static char led = 0;
   static char keypad_numlock = 0;
-  char c;
+  char c = 0;
   char sk,skc;
   sk = 0;
   if (m & UK_LEFT_SHIFT) sk = 1;  /* left shift key */
   if (m & UK_RIGHT_SHIFT) sk = 1; /* right shift key */
   skc = sk ^ ((led & UK_LEFT_SHIFT)>> 1);
-  if (d == RDBT_KP_KP_NumLock_Clear) {
+  if (d == RDBT_KP_KP_NumLock_Clear && down) {
     if (keypad_numlock) keypad_numlock = 0;
     else keypad_numlock = 1;
   }
@@ -580,11 +598,13 @@ char um_get_ascii_code(unsigned int d, unsigned int m) {
     break;
   /* LED */
   case RDBT_KP_KP_NumLock_Clear:
+    if(!down) break;
     led = led ^ 0x01;
     uh_keyboard_LED(led);
     c = 0;
     break;
   case RDBT_KP_CAPS_LOCK:
+    if(!down) break;
 #ifdef USBH_HID_LANG_JAPANESE
     if (sk) {
       led = led ^ 0x02;
@@ -597,11 +617,13 @@ char um_get_ascii_code(unsigned int d, unsigned int m) {
     c = 0;
     break;
   case RDBT_KP_ScrollLock:
+    if(!down) break;
     led = led ^ 0x04;
     uh_keyboard_LED(led);
     c = 0;
     break;
   case RDBT_KP_AP:
+    if(!down) break;
     led = led ^ 0x08;
     uh_keyboard_LED(led);
     c = 0;

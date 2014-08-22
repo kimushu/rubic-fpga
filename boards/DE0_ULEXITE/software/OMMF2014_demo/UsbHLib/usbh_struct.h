@@ -337,6 +337,7 @@ struct _usb_device {
 #endif
 #endif
 #ifdef USBH_USE_KEYBOARD
+  unsigned char lastkeys[6];
 #ifndef USBH_USE_KEYBOARD_BOOT_PROTOCOL
   unsigned char keyboard_m_idx;
   unsigned char keyboard_k_idx;

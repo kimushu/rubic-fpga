@@ -9,11 +9,12 @@
 #include "../../../../mruby/include/mruby/rubic.h"
 #endif
 
-__attribute__((section(".image"))) const alt_u16 bitmap[] = {
-#include "../freerun/akari.h"
+__attribute__((section(".image"))) const //alt_u16 bitmap[] = {
+#include "rubicle.h"
+//#include "../freerun/akari.h"
 //#include "rubic.h"
 //#include "rubic2.h"
-};
+//};
 
 extern int mirb_main(int argc, char *argv[]);
 
@@ -32,14 +33,14 @@ void mruby_main(void *pdata)
 {
 	char argv0[] = "mirb";
 	char argv1[] = "-v";
-	char *argv[] = {argv0/*, argv1*/};
-
-	IOWR(ULEXITE_LCD_BASE, 0, 0xf800007b);
-
+	char *argv[] = {
+		argv0,
+		//argv1,
+	};
 #ifdef ENABLE_RUBIC
 	mrb_open_rubic = open_rubic;
 #endif
-	//mirb_main(sizeof(argv) / sizeof(*argv), argv);
+	mirb_main(sizeof(argv) / sizeof(*argv), argv);
 	mrbtest_main(sizeof(argv) / sizeof(*argv), argv);
 /*
 	IOWR(FRAME_READER_BASE, 3, 0);

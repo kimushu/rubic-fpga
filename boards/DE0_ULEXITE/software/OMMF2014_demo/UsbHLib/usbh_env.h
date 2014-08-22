@@ -67,7 +67,7 @@ typedef struct {
 #endif
 #ifdef USBH_USE_KEYBOARD
   st_usb_dev_lookup keyboard_lookups[USBH_NUM_OF_CONNS][USBH_LOOKUP_MAX_CNT];
-  void(*pf_keyboard)(int key, int modifier);
+  void(*pf_keyboard)(int key, int modifier, int down);
   void(*pf_keyboard_raw)(int size, unsigned char *buf);
 #endif
 #ifdef USBH_USE_GAMEPAD

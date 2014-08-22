@@ -2,8 +2,8 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>ucosii</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>2014/08/15 17:46:52</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1408092412312</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>2014/08/21 0:32:29</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1408548749604</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>/home/shuta/projects/rubic/boards/DE0_ULEXITE/software/UCOSII_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>../../DE0_sys.sopcinfo</SopcDesignFile>

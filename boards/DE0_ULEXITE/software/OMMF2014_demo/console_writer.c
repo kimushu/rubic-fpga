@@ -131,6 +131,8 @@ static int console_writer_write_char(console_writer_state *sp, unsigned char ch)
 linefield:
     sp->next.row = RING_INC(sp->next.row, sp->size.rows);
     if(sp->next.row == sp->start_row) {
+      memset(&sp->buffer_glyph[sp->next.row * sp->size.cols],
+              0, sizeof(*sp->buffer_glyph) * sp->size.cols);
       sp->start_row = RING_INC(sp->start_row, sp->size.rows);
       console_writer_refresh(sp);
     }
@@ -154,29 +156,37 @@ linefield:
 int console_writer_write(console_writer_state *sp, const char *ptr, int count, int flags)
 {
   int result;
+  int index;
 
-  for(; count > 0; --count)
+  ALT_SEM_PEND(sp->lock, 0);
+  for(index = 0; index < count; ++index)
   {
     result = console_writer_write_char(sp, *ptr++);
-    if(result != 0) return result;
+    if(result > 0)
+    {
+      ALT_SEM_POST(sp->lock);
+      return -result;
+    }
   }
 
   console_writer_draw_cursor(sp);
   sp->cursor = sp->next;
   console_writer_draw_cursor(sp);
+  ALT_SEM_POST(sp->lock);
 
-  return 0;
+  return count;
 }
 
-int console_writer_write_fd(alt_fd *fd, const char *buffer, int space)
+int console_writer_write_fd(alt_fd *fd, const char *ptr, int len)
 {
   console_writer_dev* dev = (console_writer_dev *) fd->dev;
 
-  return console_writer_write(&dev->state, buffer, space, fd->fd_flags);
+  return console_writer_write(&dev->state, ptr, len, fd->fd_flags);
 }
 
 int console_writer_init(console_writer_state *sp)
 {
+  ALT_SEM_CREATE(&sp->lock, 1);
   sp->size.cols = sp->screen.width / sp->font->width;
   sp->size.rows = sp->screen.height / sp->font->height;
   sp->margin.x = (sp->screen.width - (sp->size.cols * sp->font->width)) / 2;
@@ -185,5 +195,6 @@ int console_writer_init(console_writer_state *sp)
   sp->buffer_color = (unsigned short *)malloc(sizeof(unsigned short) * sp->size.cols * sp->size.rows);
   sp->color = 0;
   console_writer_clear(sp);
+  return 0;
 }
 
