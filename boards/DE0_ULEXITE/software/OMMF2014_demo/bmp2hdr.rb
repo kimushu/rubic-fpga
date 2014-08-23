@@ -13,7 +13,7 @@ ARGV.each {|f|
   s = (d[7 + 0] + (d[7 + 1] << 16)) / 2
   o = open("#{b}.h", "w")
   o.puts("// Converted from #{f}")
-  o.puts("unsigned short #{b} = {")
+  o.puts("unsigned short #{b}[] = {")
   h.times {|y|
     y2 = h - 1 - y
     n = 0
