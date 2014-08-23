@@ -628,6 +628,9 @@ char um_get_ascii_code(unsigned int d, unsigned int m, int down) {
     uh_keyboard_LED(led);
     c = 0;
     break;
+  case 137:
+    c = '|';
+    break;
   case RDBT_KP_F1:
   case RDBT_KP_F2:
   case RDBT_KP_F3:

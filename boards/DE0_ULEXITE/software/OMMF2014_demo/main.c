@@ -6,6 +6,7 @@
 #include "priv/alt_file.h"
 #include "console_writer.h"
 #include <io.h>
+#include <string.h>
 
 #define DEFINE_TASK(name, id, prio, stk_size) \
 	static OS_STK stk_##name[stk_size]; \
@@ -46,7 +47,7 @@ static console_writer_dev console_writer =
   },
   {
     0x007c0000,
-    0x00700000,
+    0x00700000 + (480 * 272 * 2) * 2,
     480 * 2,
     &font_table,
     { {480}, {272} },
@@ -73,6 +74,12 @@ int main(void)
 	volatile alt_u32 *reg = (volatile alt_u32 *)ULEXITE_LCD_BASE;
 	*reg = 0xf800007b;
 	while(1); //-*/
+	if(1) {
+		int sel = (IORD(PIO_SW_BASE, 0) >> 8) & 3;
+		memset((void *)console_writer.state.back_base, 0xff, 480 * 272 * 2);
+		if(sel > 2) sel = 2;
+		console_writer.state.back_base = 0x700000 + (480 * 272 * 2) * sel;
+	}
 	IOWR(ULEXITE_LCD_BASE, 0, 0xf800007b);
 	console_writer_init(&console_writer.state);
 	alt_fd_list[STDOUT_FILENO].dev = &console_writer.dev;

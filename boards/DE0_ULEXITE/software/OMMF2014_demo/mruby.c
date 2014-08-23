@@ -9,13 +9,13 @@
 #include "../../../../mruby/include/mruby/rubic.h"
 #endif
 
-__attribute__((section(".image"))) const //alt_u16 bitmap[] = {
+__attribute__((section(".image"))) const
 #include "rubicle_480x272.h"
+__attribute__((section(".image"))) const
 #include "rubicle_ckw_bg_pale_480x272.h"
 //#include "../freerun/akari.h"
 //#include "rubic.h"
 //#include "rubic2.h"
-//};
 
 extern int mirb_main(int argc, char *argv[]);
 
