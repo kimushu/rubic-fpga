@@ -1,3 +1,9 @@
 [submodule "mruby"]
 	path = mruby
 	url = git@github.com:kimushu/mruby.git
+[submodule "linenoise"]
+	path = linenoise
+	url = https://github.com/antirez/linenoise.git
+[submodule "boards/DE0_ULEXITE/software/OMMF2014_demo/linenoise"]
+	path = boards/DE0_ULEXITE/software/OMMF2014_demo/linenoise
+	url = https://github.com/antirez/linenoise.git

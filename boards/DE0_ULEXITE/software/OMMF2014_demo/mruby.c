@@ -10,7 +10,8 @@
 #endif
 
 __attribute__((section(".image"))) const //alt_u16 bitmap[] = {
-#include "rubicle.h"
+#include "rubicle_480x272.h"
+#include "rubicle_ckw_bg_pale_480x272.h"
 //#include "../freerun/akari.h"
 //#include "rubic.h"
 //#include "rubic2.h"
