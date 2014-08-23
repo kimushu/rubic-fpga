@@ -655,6 +655,7 @@ char um_get_ascii_code(unsigned int d, unsigned int m, int down) {
   case RDBT_KP_LeftArrow:
   case RDBT_KP_DownArrow:
   case RDBT_KP_UpArrow:
+    break;
   case RDBT_KP_KP_SL:
     c = '/';
     break;

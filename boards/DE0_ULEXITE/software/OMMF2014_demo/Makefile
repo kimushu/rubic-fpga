@@ -1100,4 +1100,12 @@ $(OBJDUMP_NAME) : $(ELF)
 print-elf-name:
 	@$(ECHO) $(ELF)
 
+.PHONY: relink
+relink:
+	rm -f $(ELF)
+	$(MAKE) compact
+
+.PHONY: compact
+compact: $(ELF)
+	./strip-sopcinfo $<
 
