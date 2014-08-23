@@ -157,6 +157,8 @@ C_SRCS += mrbtest_driver.c
 C_SRCS += console_writer.c
 C_SRCS += shnm8x16ab.c
 C_SRCS += sys_wrapper.c
+C_SRCS += linenoise/linenoise.c
+C_SRCS += termios.c
 CXX_SRCS :=
 ASM_SRCS :=
 
@@ -194,7 +196,8 @@ SYS_LIB :=
 BSP_ROOT_DIR := ../UCOSII_bsp/
 
 # List of application specific include directories, library directories and library names
-APP_INCLUDE_DIRS := ../../../../mruby/include
+APP_INCLUDE_DIRS += ../../../../mruby/include
+APP_INCLUDE_DIRS += ./
 APP_LIBRARY_DIRS += ../../../../mruby/build/nios2-rubic/lib
 APP_LIBRARY_DIRS += ../../../../mruby/build/nios2-rubic/test
 APP_LIBRARY_NAMES += mruby
