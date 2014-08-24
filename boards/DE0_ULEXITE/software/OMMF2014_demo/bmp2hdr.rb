@@ -10,7 +10,7 @@ ARGV.each {|f|
   h = (d[7 + 4] + (d[7 + 5] << 16))
   l = (((w * bpp / 8) + 3) / 4) * 2
   puts "  Width: #{w}, Height: #{h}, LineSize: #{l*2}"
-  s = (d[7 + 0] + (d[7 + 1] << 16)) / 2
+  s = 7 + (d[7 + 0] + (d[7 + 1] << 16)) / 2
   o = open("#{b}.h", "w")
   o.puts("// Converted from #{f}")
   o.puts("unsigned short #{b}[] = {")
